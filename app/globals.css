@@ -5,16 +5,14 @@
 /* 모든 Pretendard 폰트 파일 정의 */
 @font-face {
     font-family: 'Pretendard';
-    src: url('/static/fonts/Pretendard-Regular.woff') format('woff'),
-        url('/static/fonts/Pretendard-Regular.otf') format('opentype');
+    src: url('/fonts/Pretendard-Regular.woff') format('woff'), url('/fonts/Pretendard-Regular.otf') format('opentype');
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Pretendard';
-    src: url('/static/fonts/Pretendard-Bold.woff') format('woff'),
-        url('/static/fonts/Pretendard-Bold.otf') format('opentype');
+    src: url('/fonts/Pretendard-Bold.woff') format('woff'), url('/fonts/Pretendard-Bold.otf') format('opentype');
     font-weight: 700;
     font-style: normal;
 }
@@ -22,16 +20,15 @@
 /* 필요한 모든 font-weight와 style을 추가 정의 */
 @font-face {
     font-family: 'Pretendard';
-    src: url('/static/fonts/Pretendard-Light.woff') format('woff'),
-        url('/static/fonts/Pretendard-Light.otf') format('opentype');
+    src: url('/fonts/Pretendard-Light.woff') format('woff'), url('/fonts/Pretendard-Light.otf') format('opentype');
     font-weight: 300;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Pretendard';
-    src: url('/static/fonts/Pretendard-ExtraBold.woff') format('woff'),
-        url('/static/fonts/Pretendard-ExtraBold.otf') format('opentype');
+    src: url('/fonts/Pretendard-ExtraBold.woff') format('woff'),
+        url('/fonts/Pretendard-ExtraBold.otf') format('opentype');
     font-weight: 800;
     font-style: normal;
 }
