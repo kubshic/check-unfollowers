@@ -27,12 +27,11 @@ export default function UploadPage() {
                 body: formData,
             });
 
-            const result = await response.json();
-
             if (response.ok) {
                 setError(null);
-                router.push('/result');
+                router.push('/result'); // 결과 페이지로 이동
             } else {
+                const result = await response.json();
                 setError(result.error);
             }
         } catch (err) {
