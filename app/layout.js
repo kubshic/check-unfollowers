@@ -1,5 +1,6 @@
 import './globals.css';
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
+import NavBar from '@/components/NavBar';
 
 export const metadata = {
     title: 'Create Next App',
@@ -9,8 +10,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-            <body className={`antialiased`}>
-                <SessionProviderWrapper>{children}</SessionProviderWrapper>
+            <body className="antialiased">
+                <SessionProviderWrapper>
+                    <NavBar />
+                    {children}
+                </SessionProviderWrapper>
             </body>
         </html>
     );
