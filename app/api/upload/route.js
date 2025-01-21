@@ -38,46 +38,35 @@ export async function POST(request) {
             return NextResponse.json({ error: '파일 이름에 날짜 또는 Instagram ID가 없습니다.' }, { status: 400 });
         }
 
+        // 압축 파일 내 모든 경로 추출
+        const entries = zip.getEntries().map((entry) => entry.entryName);
+
+        // Instagram과 Threads 폴더 확인
+        const instagramExists = entries.includes('connections/');
+        const threadsExists = entries.includes('your_instagram_activity/');
+
+        if (!instagramExists && !threadsExists) {
+            return NextResponse.json({ error: '유효한 폴더가 없습니다.' }, { status: 400 });
+        }
+
+        const history = [];
         const tempDir = path.join(process.cwd(), 'temp');
         fs.mkdirSync(tempDir, { recursive: true });
 
-        // 필요한 파일 경로 설정
-        const targetFiles = [
-            'connections/followers_and_following/followers_1.json',
-            'connections/followers_and_following/following.json',
-        ];
-
-        targetFiles.forEach((targetPath) => {
-            const entry = zip.getEntry(targetPath);
-            if (entry) {
-                const content = zip.readAsText(entry);
-                const outputPath = path.join(tempDir, path.basename(targetPath));
-                fs.writeFileSync(outputPath, content);
-            }
-        });
-
-        // followers_1.json과 following.json 파일 경로
-        const followersPath = path.join(tempDir, 'followers_1.json');
-        const followingPath = path.join(tempDir, 'following.json');
-
-        if (!fs.existsSync(followersPath) || !fs.existsSync(followingPath)) {
-            return NextResponse.json(
-                { error: 'followers_1.json 또는 following.json 파일이 없습니다.' },
-                { status: 404 }
-            );
-        }
-
-        const followersData = JSON.parse(fs.readFileSync(followersPath, 'utf-8'));
-        const followingData = JSON.parse(fs.readFileSync(followingPath, 'utf-8'));
-
-        // followers_1과 following에서 "value" 필드 값 추출
+        // 유틸리티 함수: JSON 데이터에서 value 값 추출
         const extractValues = (data) => {
             const values = [];
             const traverse = (obj) => {
                 if (Array.isArray(obj)) {
                     obj.forEach(traverse);
                 } else if (obj && typeof obj === 'object') {
-                    if (obj.value) values.push(obj.value);
+                    if (obj.string_list_data) {
+                        obj.string_list_data.forEach((item) => {
+                            if (item.value) {
+                                values.push(item.value);
+                            }
+                        });
+                    }
                     Object.values(obj).forEach(traverse);
                 }
             };
@@ -85,11 +74,108 @@ export async function POST(request) {
             return values;
         };
 
-        const followersValues = new Set(extractValues(followersData));
-        const followingValues = extractValues(followingData);
+        const getPreviousUnfollowList = async (platform, currentQueryDate, session) => {
+            const client = await clientPromise;
+            const db = client.db('userDatabase');
+            const collection = db.collection('users');
 
-        // 언팔 리스트 계산
-        const unfollowList = followingValues.filter((user) => !followersValues.has(user));
+            const user = await collection.findOne({ email: session.user.email });
+
+            if (user && Array.isArray(user.history)) {
+                const filteredHistory = user.history
+                    .filter((item) => item.platform === platform && item.queryDate !== currentQueryDate)
+                    .sort((a, b) => new Date(b.queryDate) - new Date(a.queryDate)); // 최신 순으로 정렬.
+
+                return filteredHistory.length > 0 ? filteredHistory[0].unfollowList || [] : [];
+            }
+
+            return [];
+        };
+
+        const calculateNewUnfollowers = (previousList, currentList) => {
+            const previousSet = new Set(previousList);
+            return currentList.filter((user) => !previousSet.has(user));
+        };
+
+        // Instagram 처리
+        if (instagramExists) {
+            const targetFiles = [
+                'connections/followers_and_following/followers_1.json',
+                'connections/followers_and_following/following.json',
+            ];
+
+            const followersPath = path.join(tempDir, 'followers_1.json');
+            const followingPath = path.join(tempDir, 'following.json');
+
+            targetFiles.forEach((targetPath) => {
+                const entry = zip.getEntry(targetPath);
+                if (entry) {
+                    const content = zip.readAsText(entry);
+                    const outputPath = path.join(tempDir, path.basename(targetPath));
+                    fs.writeFileSync(outputPath, content);
+                }
+            });
+
+            if (fs.existsSync(followersPath) && fs.existsSync(followingPath)) {
+                const followersData = JSON.parse(fs.readFileSync(followersPath, 'utf-8'));
+                const followingData = JSON.parse(fs.readFileSync(followingPath, 'utf-8'));
+
+                const followersValues = new Set(extractValues(followersData));
+                const followingValues = extractValues(followingData);
+
+                const unfollowList = followingValues.filter((user) => !followersValues.has(user));
+                const previousUnfollowList = await getPreviousUnfollowList('Instagram', queryDate, session);
+                const newUnfollowers = calculateNewUnfollowers(previousUnfollowList, unfollowList);
+
+                history.push({
+                    queryDate: new Date(queryDate),
+                    username,
+                    platform: 'Instagram',
+                    unfollowList,
+                    newUnfollowers,
+                });
+            }
+        }
+
+        // Threads 처리
+        if (threadsExists) {
+            const targetFiles = [
+                'your_instagram_activity/threads/followers.json',
+                'your_instagram_activity/threads/following.json',
+            ];
+
+            const followersPath = path.join(tempDir, 'followers.json');
+            const followingPath = path.join(tempDir, 'following.json');
+
+            targetFiles.forEach((targetPath) => {
+                const entry = zip.getEntry(targetPath);
+                if (entry) {
+                    const content = zip.readAsText(entry);
+                    const outputPath = path.join(tempDir, path.basename(targetPath));
+                    fs.writeFileSync(outputPath, content);
+                }
+            });
+
+            if (fs.existsSync(followersPath) && fs.existsSync(followingPath)) {
+                const followersData = JSON.parse(fs.readFileSync(followersPath, 'utf-8'));
+                const followingData = JSON.parse(fs.readFileSync(followingPath, 'utf-8'));
+
+                const followersValues = new Set(extractValues(followersData));
+                const followingValues = extractValues(followingData);
+
+                const unfollowList = followingValues.filter((user) => !followersValues.has(user));
+                const previousUnfollowList = await getPreviousUnfollowList('Threads', queryDate, session);
+                const newUnfollowers = calculateNewUnfollowers(previousUnfollowList, unfollowList);
+
+                history.push({
+                    queryDate: new Date(queryDate),
+                    username,
+                    platform: 'Threads',
+                    unfollowList,
+                    newUnfollowers,
+                });
+            }
+        }
 
         // MongoDB 저장
         const client = await clientPromise;
@@ -99,19 +185,13 @@ export async function POST(request) {
         const result = await collection.updateOne(
             { email: session.user.email },
             {
-                $push: {
-                    history: {
-                        queryDate: new Date(queryDate),
-                        username,
-                        unfollowList,
-                    },
-                },
+                $push: { history: { $each: history } },
             },
             { upsert: true }
         );
 
         console.log('MongoDB update result:', result);
-        console.log('Saved data:', { queryDate, username, unfollowList });
+        console.log('Saved data:', { queryDate, username });
 
         return NextResponse.json({ success: true });
     } catch (error) {
