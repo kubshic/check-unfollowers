@@ -45,10 +45,10 @@ export default function ProfilePage() {
         }));
     };
 
-    const toggleDate = (date) => {
+    const toggleDate = (key) => {
         setOpenDates((prevState) => ({
             ...prevState,
-            [date]: !prevState[date],
+            [key]: !prevState[key],
         }));
     };
 
@@ -103,44 +103,49 @@ export default function ProfilePage() {
                                         </button>
                                         {openSections[`${username}-instagram`] && (
                                             <ul className="space-y-4 mt-4">
-                                                {instagram.map((record, index) => (
-                                                    <li key={index}>
-                                                        <button
-                                                            onClick={() => toggleDate(record.queryDate)}
-                                                            className="text-blue-500"
-                                                        >
-                                                            {new Date(record.queryDate).toLocaleDateString()}
-                                                        </button>
-                                                        {openDates[record.queryDate] && (
-                                                            <div className="flex space-x-4 mt-4">
-                                                                <div className="w-1/2">
-                                                                    <h3 className="font-bold">Unfollow List</h3>
-                                                                    {record.unfollowList.length > 0 ? (
-                                                                        <ul className="list-disc pl-6 space-y-1">
-                                                                            {record.unfollowList.map((user, i) => (
-                                                                                <li key={i}>{user}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <p>Unfollow List가 없습니다.</p>
-                                                                    )}
+                                                {instagram.map((record, index) => {
+                                                    const key = `${username}-${record.queryDate}-instagram`;
+                                                    return (
+                                                        <li key={index}>
+                                                            <button
+                                                                onClick={() => toggleDate(key)}
+                                                                className="text-blue-500"
+                                                            >
+                                                                {new Date(record.queryDate).toLocaleDateString()}
+                                                            </button>
+                                                            {openDates[key] && (
+                                                                <div className="flex space-x-4 mt-4">
+                                                                    <div className="w-1/2">
+                                                                        <h3 className="font-bold">Unfollow List</h3>
+                                                                        {record.unfollowList.length > 0 ? (
+                                                                            <ul className="list-disc pl-6 space-y-1">
+                                                                                {record.unfollowList.map((user, i) => (
+                                                                                    <li key={i}>{user}</li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <p>Unfollow List가 없습니다.</p>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="w-1/2">
+                                                                        <h3 className="font-bold">New Unfollowers</h3>
+                                                                        {record.newUnfollowers.length > 0 ? (
+                                                                            <ul className="list-disc pl-6 space-y-1">
+                                                                                {record.newUnfollowers.map(
+                                                                                    (user, i) => (
+                                                                                        <li key={i}>{user}</li>
+                                                                                    )
+                                                                                )}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <p>새로운 Unfollowers가 없습니다.</p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="w-1/2">
-                                                                    <h3 className="font-bold">New Unfollowers</h3>
-                                                                    {record.newUnfollowers.length > 0 ? (
-                                                                        <ul className="list-disc pl-6 space-y-1">
-                                                                            {record.newUnfollowers.map((user, i) => (
-                                                                                <li key={i}>{user}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <p>새로운 Unfollowers가 없습니다.</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </li>
-                                                ))}
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         )}
                                     </div>
@@ -156,44 +161,49 @@ export default function ProfilePage() {
                                         </button>
                                         {openSections[`${username}-threads`] && (
                                             <ul className="space-y-4 mt-4">
-                                                {threads.map((record, index) => (
-                                                    <li key={index}>
-                                                        <button
-                                                            onClick={() => toggleDate(record.queryDate)}
-                                                            className="text-blue-500"
-                                                        >
-                                                            {new Date(record.queryDate).toLocaleDateString()}
-                                                        </button>
-                                                        {openDates[record.queryDate] && (
-                                                            <div className="flex space-x-4 mt-4">
-                                                                <div className="w-1/2">
-                                                                    <h3 className="font-bold">Unfollow List</h3>
-                                                                    {record.unfollowList.length > 0 ? (
-                                                                        <ul className="list-disc pl-6 space-y-1">
-                                                                            {record.unfollowList.map((user, i) => (
-                                                                                <li key={i}>{user}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <p>Unfollow List가 없습니다.</p>
-                                                                    )}
+                                                {threads.map((record, index) => {
+                                                    const key = `${username}-${record.queryDate}-threads`;
+                                                    return (
+                                                        <li key={index}>
+                                                            <button
+                                                                onClick={() => toggleDate(key)}
+                                                                className="text-blue-500"
+                                                            >
+                                                                {new Date(record.queryDate).toLocaleDateString()}
+                                                            </button>
+                                                            {openDates[key] && (
+                                                                <div className="flex space-x-4 mt-4">
+                                                                    <div className="w-1/2">
+                                                                        <h3 className="font-bold">Unfollow List</h3>
+                                                                        {record.unfollowList.length > 0 ? (
+                                                                            <ul className="list-disc pl-6 space-y-1">
+                                                                                {record.unfollowList.map((user, i) => (
+                                                                                    <li key={i}>{user}</li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <p>Unfollow List가 없습니다.</p>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="w-1/2">
+                                                                        <h3 className="font-bold">New Unfollowers</h3>
+                                                                        {record.newUnfollowers.length > 0 ? (
+                                                                            <ul className="list-disc pl-6 space-y-1">
+                                                                                {record.newUnfollowers.map(
+                                                                                    (user, i) => (
+                                                                                        <li key={i}>{user}</li>
+                                                                                    )
+                                                                                )}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <p>새로운 Unfollowers가 없습니다.</p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="w-1/2">
-                                                                    <h3 className="font-bold">New Unfollowers</h3>
-                                                                    {record.newUnfollowers.length > 0 ? (
-                                                                        <ul className="list-disc pl-6 space-y-1">
-                                                                            {record.newUnfollowers.map((user, i) => (
-                                                                                <li key={i}>{user}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <p>새로운 Unfollowers가 없습니다.</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </li>
-                                                ))}
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         )}
                                     </div>
