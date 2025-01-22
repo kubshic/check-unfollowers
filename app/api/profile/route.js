@@ -17,16 +17,22 @@ export async function GET(req) {
         const db = client.db('userDatabase');
         const collection = db.collection('users');
 
-        const userData = await collection.findOne({ email: session.user.email }, { projection: { history: 1 } });
+        const userData = await collection.findOne(
+            { email: session.user.email },
+            { projection: { instagramHistory: 1, threadsHistory: 1 } }
+        );
 
-        if (!userData || !userData.history) {
-            return new Response(JSON.stringify({ history: [] }), {
+        if (!userData) {
+            return new Response(JSON.stringify({ instagramHistory: [], threadsHistory: [] }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
             });
         }
 
-        return new Response(JSON.stringify({ history: userData.history }), {
+        const instagramHistory = userData.instagramHistory || [];
+        const threadsHistory = userData.threadsHistory || [];
+
+        return new Response(JSON.stringify({ instagramHistory, threadsHistory }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         });

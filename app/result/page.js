@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 
 export default function ResultPage() {
-    const [unfollowList, setUnfollowList] = useState([]);
+    const [instagramData, setInstagramData] = useState(null);
+    const [threadsData, setThreadsData] = useState(null);
     const [username, setUsername] = useState('');
-    const [queryDate, setQueryDate] = useState('');
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -15,9 +15,15 @@ export default function ResultPage() {
                 const result = await response.json();
 
                 if (response.ok) {
-                    setUnfollowList(result.unfollowList);
-                    setUsername(result.username);
-                    setQueryDate(result.queryDate);
+                    setInstagramData(result.instagram);
+                    setThreadsData(result.threads);
+
+                    // Instagram ID를 통일하여 사용
+                    if (result.instagram) {
+                        setUsername(result.instagram.username);
+                    } else if (result.threads) {
+                        setUsername(result.threads.username);
+                    }
                 } else {
                     setError(result.error);
                 }
@@ -34,23 +40,71 @@ export default function ResultPage() {
         <div>
             <h1>결과 페이지</h1>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            {unfollowList.length > 0 ? (
-                <div>
-                    <p>
-                        <strong>Instagram ID:</strong> {username}
-                    </p>
-                    <p>
-                        <strong>조회 날짜:</strong> {new Date(queryDate).toLocaleDateString()}
-                    </p>
-                    <ul>
-                        {unfollowList.map((user, index) => (
-                            <li key={index}>{user}</li>
-                        ))}
-                    </ul>
-                </div>
-            ) : (
-                <p>데이터를 불러오는 중...</p>
+            {username && (
+                <p>
+                    <strong>Instagram ID:</strong> {username}
+                </p>
             )}
+
+            {instagramData && (
+                <section>
+                    <h2>Instagram 결과</h2>
+                    <p>
+                        <strong>조회 날짜:</strong> {new Date(instagramData.queryDate).toLocaleDateString()}
+                    </p>
+                    <h3>Unfollow List:</h3>
+                    {instagramData.unfollowList.length > 0 ? (
+                        <ul>
+                            {instagramData.unfollowList.map((user, index) => (
+                                <li key={index}>{user}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>Unfollow List가 없습니다.</p>
+                    )}
+                    <h3>New Unfollowers:</h3>
+                    {instagramData.newUnfollowers.length > 0 ? (
+                        <ul>
+                            {instagramData.newUnfollowers.map((user, index) => (
+                                <li key={index}>{user}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>새로운 Unfollowers가 없습니다.</p>
+                    )}
+                </section>
+            )}
+
+            {threadsData && (
+                <section>
+                    <h2>Threads 결과</h2>
+                    <p>
+                        <strong>조회 날짜:</strong> {new Date(threadsData.queryDate).toLocaleDateString()}
+                    </p>
+                    <h3>Unfollow List:</h3>
+                    {threadsData.unfollowList.length > 0 ? (
+                        <ul>
+                            {threadsData.unfollowList.map((user, index) => (
+                                <li key={index}>{user}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>Unfollow List가 없습니다.</p>
+                    )}
+                    <h3>New Unfollowers:</h3>
+                    {threadsData.newUnfollowers.length > 0 ? (
+                        <ul>
+                            {threadsData.newUnfollowers.map((user, index) => (
+                                <li key={index}>{user}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>새로운 Unfollowers가 없습니다.</p>
+                    )}
+                </section>
+            )}
+
+            {!instagramData && !threadsData && !error && <p>데이터를 불러오는 중...</p>}
         </div>
     );
 }

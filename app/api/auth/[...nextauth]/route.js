@@ -28,7 +28,8 @@ export const authOptions = {
                 name: user.name || null,
                 email: user.email,
                 image: user.image || null,
-                history: [], // 기본값 빈 배열
+                instagramHistory: [], // 기본값 빈 배열
+                threadsHistory: [], // 기본값 빈 배열
             };
 
             // 이메일로 기존 사용자 검색

@@ -49,7 +49,8 @@ export async function POST(request) {
             return NextResponse.json({ error: '유효한 폴더가 없습니다.' }, { status: 400 });
         }
 
-        const history = [];
+        const instagramHistory = [];
+        const threadsHistory = [];
         const tempDir = path.join(process.cwd(), 'temp');
         fs.mkdirSync(tempDir, { recursive: true });
 
@@ -74,16 +75,16 @@ export async function POST(request) {
             return values;
         };
 
-        const getPreviousUnfollowList = async (platform, currentQueryDate, session) => {
+        const getPreviousUnfollowList = async (collectionName, currentQueryDate) => {
             const client = await clientPromise;
             const db = client.db('userDatabase');
             const collection = db.collection('users');
 
             const user = await collection.findOne({ email: session.user.email });
 
-            if (user && Array.isArray(user.history)) {
-                const filteredHistory = user.history
-                    .filter((item) => item.platform === platform && item.queryDate !== currentQueryDate)
+            if (user && Array.isArray(user[collectionName])) {
+                const filteredHistory = user[collectionName]
+                    .filter((item) => item.queryDate !== currentQueryDate)
                     .sort((a, b) => new Date(b.queryDate) - new Date(a.queryDate)); // 최신 순으로 정렬.
 
                 return filteredHistory.length > 0 ? filteredHistory[0].unfollowList || [] : [];
@@ -124,13 +125,12 @@ export async function POST(request) {
                 const followingValues = extractValues(followingData);
 
                 const unfollowList = followingValues.filter((user) => !followersValues.has(user));
-                const previousUnfollowList = await getPreviousUnfollowList('Instagram', queryDate, session);
+                const previousUnfollowList = await getPreviousUnfollowList('Instagram', queryDate);
                 const newUnfollowers = calculateNewUnfollowers(previousUnfollowList, unfollowList);
 
-                history.push({
+                instagramHistory.push({
                     queryDate: new Date(queryDate),
                     username,
-                    platform: 'Instagram',
                     unfollowList,
                     newUnfollowers,
                 });
@@ -164,13 +164,12 @@ export async function POST(request) {
                 const followingValues = extractValues(followingData);
 
                 const unfollowList = followingValues.filter((user) => !followersValues.has(user));
-                const previousUnfollowList = await getPreviousUnfollowList('Threads', queryDate, session);
+                const previousUnfollowList = await getPreviousUnfollowList('Threads', queryDate);
                 const newUnfollowers = calculateNewUnfollowers(previousUnfollowList, unfollowList);
 
-                history.push({
+                threadsHistory.push({
                     queryDate: new Date(queryDate),
                     username,
-                    platform: 'Threads',
                     unfollowList,
                     newUnfollowers,
                 });
@@ -182,16 +181,24 @@ export async function POST(request) {
         const db = client.db('userDatabase');
         const collection = db.collection('users');
 
+        const updateData = {};
+        if (instagramHistory.length > 0) {
+            updateData.instagramHistory = { $each: instagramHistory };
+        }
+        if (threadsHistory.length > 0) {
+            updateData.threadsHistory = { $each: threadsHistory };
+        }
+
         const result = await collection.updateOne(
             { email: session.user.email },
             {
-                $push: { history: { $each: history } },
+                $push: updateData,
             },
             { upsert: true }
         );
 
         console.log('MongoDB update result:', result);
-        console.log('Saved data:', { queryDate, username });
+        console.log('Saved data:', { instagramHistory, threadsHistory });
 
         return NextResponse.json({ success: true });
     } catch (error) {
