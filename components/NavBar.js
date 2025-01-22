@@ -10,6 +10,10 @@ export default function NavBar() {
     const { data: session } = useSession();
     const router = useRouter();
 
+    const handleLogoClick = () => {
+        window.location.href = '/';
+    };
+
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
@@ -25,16 +29,11 @@ export default function NavBar() {
 
     return (
         <>
-            <nav className="bg-blue-500 text-white px-4 py-3 flex justify-between items-center">
+            <nav className="bg-white border-b-4 text-black px-4 py-3 flex justify-between items-center">
                 {/* Logo */}
-                <div className="flex items-center space-x-2">
-                    <Image
-                        src="/logo.png" // 로고 이미지 경로를 업데이트하세요
-                        alt="Logo"
-                        width={40}
-                        height={40}
-                    />
-                    <span className="text-lg font-bold">My Website</span>
+                <div className="flex items-center space-x-4 cursor-pointer" onClick={handleLogoClick}>
+                    <Image src="/logo.svg" alt="Logo" width={40} height={40} />
+                    <span className="text-xl font-bold pt-1">FollowCheck</span>
                 </div>
 
                 {/* Desktop Menu */}
@@ -70,22 +69,47 @@ export default function NavBar() {
                     isMenuOpen ? 'max-h-screen' : 'max-h-0'
                 }`}
             >
-                <ul className="bg-blue-500 text-white px-4 py-2 space-y-2">
-                    <li className="hover:text-gray-200 cursor-pointer" onClick={() => router.push('/about')}>
+                <ul className="bg-white text-black border-b-4 px-4 py-2 space-y-2">
+                    <li
+                        className="hover:text-[#FE06AE] cursor-pointer"
+                        onClick={() => {
+                            setIsMenuOpen(false);
+                            router.push('/about');
+                        }}
+                    >
                         About
                     </li>
-                    <li className="hover:text-gray-200 cursor-pointer" onClick={() => router.push('/upload')}>
+                    <li
+                        className="hover:text-[#FE06AE] cursor-pointer"
+                        onClick={() => {
+                            setIsMenuOpen(false);
+                            router.push('/upload');
+                        }}
+                    >
                         Start
                     </li>
-                    <li className="hover:text-gray-200 cursor-pointer" onClick={() => router.push('/faq')}>
+                    <li
+                        className="hover:text-[#FE06AE] cursor-pointer"
+                        onClick={() => {
+                            setIsMenuOpen(false);
+                            router.push('/faq');
+                        }}
+                    >
                         FAQ
                     </li>
                     {session && (
-                        <li className="hover:text-gray-200 cursor-pointer" onClick={() => router.push('/profile')}>
+                        <li
+                            className="hover:text-[#FE06AE] cursor-pointer"
+                            onClick={() => {
+                                setIsMenuOpen(false);
+                                router.push('/profile');
+                            }}
+                        >
                             My Page
                         </li>
                     )}
-                    <li className="hover:text-gray-200 cursor-pointer" onClick={handleSignInOut}>
+
+                    <li className="hover:text-[#FE06AE] cursor-pointer" onClick={handleSignInOut}>
                         {session ? 'Sign Out' : 'Sign In'}
                     </li>
                 </ul>
