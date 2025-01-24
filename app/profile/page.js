@@ -52,8 +52,30 @@ export default function ProfilePage() {
         }));
     };
 
+    const deleteHistory = async (date, historyType) => {
+        try {
+            const response = await fetch('/api/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, historyType }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                if (historyType === 'instagramHistory') {
+                    setInstagramHistory((prev) => prev.filter((record) => record.queryDate !== date));
+                } else if (historyType === 'threadsHistory') {
+                    setThreadsHistory((prev) => prev.filter((record) => record.queryDate !== date));
+                }
+            } else {
+                alert(result.error || 'Failed to delete history.');
+            }
+        } catch (error) {
+            alert('An error occurred while deleting the record.');
+        }
+    };
+
     const groupedHistory = {};
-    // Instagram 데이터 추가
     instagramHistory.forEach((record) => {
         if (!groupedHistory[record.username]) {
             groupedHistory[record.username] = { instagram: [], threads: [] };
@@ -61,13 +83,14 @@ export default function ProfilePage() {
         groupedHistory[record.username].instagram.push(record);
     });
 
-    // Threads 데이터 추가
     threadsHistory.forEach((record) => {
         if (!groupedHistory[record.username]) {
             groupedHistory[record.username] = { instagram: [], threads: [] };
         }
         groupedHistory[record.username].threads.push(record);
     });
+
+    const isDaangnEmail = session?.user?.email?.endsWith('@daangn.com');
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -103,49 +126,42 @@ export default function ProfilePage() {
                                         </button>
                                         {openSections[`${username}-instagram`] && (
                                             <ul className="space-y-4 mt-4">
-                                                {instagram.map((record, index) => {
-                                                    const key = `${username}-${record.queryDate}-instagram`;
-                                                    return (
-                                                        <li key={index}>
+                                                {instagram.map((record, index) => (
+                                                    <li key={index}>
+                                                        <div className="flex justify-between items-center">
                                                             <button
-                                                                onClick={() => toggleDate(key)}
+                                                                onClick={() =>
+                                                                    toggleDate(
+                                                                        `${username}-${record.queryDate}-instagram`
+                                                                    )
+                                                                }
                                                                 className="text-blue-500"
                                                             >
                                                                 {new Date(record.queryDate).toLocaleDateString()}
                                                             </button>
-                                                            {openDates[key] && (
-                                                                <div className="flex space-x-4 mt-4">
-                                                                    <div className="w-1/2">
-                                                                        <h3 className="font-bold">Unfollow List</h3>
-                                                                        {record.unfollowList.length > 0 ? (
-                                                                            <ul className="list-disc pl-6 space-y-1">
-                                                                                {record.unfollowList.map((user, i) => (
-                                                                                    <li key={i}>{user}</li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        ) : (
-                                                                            <p>Unfollow List가 없습니다.</p>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="w-1/2">
-                                                                        <h3 className="font-bold">New Unfollowers</h3>
-                                                                        {record.newUnfollowers.length > 0 ? (
-                                                                            <ul className="list-disc pl-6 space-y-1">
-                                                                                {record.newUnfollowers.map(
-                                                                                    (user, i) => (
-                                                                                        <li key={i}>{user}</li>
-                                                                                    )
-                                                                                )}
-                                                                            </ul>
-                                                                        ) : (
-                                                                            <p>새로운 Unfollowers가 없습니다.</p>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                            {isDaangnEmail && (
+                                                                <button
+                                                                    onClick={() =>
+                                                                        deleteHistory(
+                                                                            record.queryDate,
+                                                                            'instagramHistory'
+                                                                        )
+                                                                    }
+                                                                    className="text-red-500"
+                                                                >
+                                                                    <img
+                                                                        src="/delete-icon.svg"
+                                                                        alt="Delete"
+                                                                        className="w-5 h-5"
+                                                                    />
+                                                                </button>
                                                             )}
-                                                        </li>
-                                                    );
-                                                })}
+                                                        </div>
+                                                        {openDates[`${username}-${record.queryDate}-instagram`] && (
+                                                            <div className="mt-4">{/* ...내용 표시... */}</div>
+                                                        )}
+                                                    </li>
+                                                ))}
                                             </ul>
                                         )}
                                     </div>
@@ -161,49 +177,42 @@ export default function ProfilePage() {
                                         </button>
                                         {openSections[`${username}-threads`] && (
                                             <ul className="space-y-4 mt-4">
-                                                {threads.map((record, index) => {
-                                                    const key = `${username}-${record.queryDate}-threads`;
-                                                    return (
-                                                        <li key={index}>
+                                                {threads.map((record, index) => (
+                                                    <li key={index}>
+                                                        <div className="flex justify-between items-center">
                                                             <button
-                                                                onClick={() => toggleDate(key)}
+                                                                onClick={() =>
+                                                                    toggleDate(
+                                                                        `${username}-${record.queryDate}-threads`
+                                                                    )
+                                                                }
                                                                 className="text-blue-500"
                                                             >
                                                                 {new Date(record.queryDate).toLocaleDateString()}
                                                             </button>
-                                                            {openDates[key] && (
-                                                                <div className="flex space-x-4 mt-4">
-                                                                    <div className="w-1/2">
-                                                                        <h3 className="font-bold">Unfollow List</h3>
-                                                                        {record.unfollowList.length > 0 ? (
-                                                                            <ul className="list-disc pl-6 space-y-1">
-                                                                                {record.unfollowList.map((user, i) => (
-                                                                                    <li key={i}>{user}</li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        ) : (
-                                                                            <p>Unfollow List가 없습니다.</p>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="w-1/2">
-                                                                        <h3 className="font-bold">New Unfollowers</h3>
-                                                                        {record.newUnfollowers.length > 0 ? (
-                                                                            <ul className="list-disc pl-6 space-y-1">
-                                                                                {record.newUnfollowers.map(
-                                                                                    (user, i) => (
-                                                                                        <li key={i}>{user}</li>
-                                                                                    )
-                                                                                )}
-                                                                            </ul>
-                                                                        ) : (
-                                                                            <p>새로운 Unfollowers가 없습니다.</p>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                            {isDaangnEmail && (
+                                                                <button
+                                                                    onClick={() =>
+                                                                        deleteHistory(
+                                                                            record.queryDate,
+                                                                            'threadsHistory'
+                                                                        )
+                                                                    }
+                                                                    className="text-red-500"
+                                                                >
+                                                                    <img
+                                                                        src="/delete-icon.svg"
+                                                                        alt="Delete"
+                                                                        className="w-5 h-5"
+                                                                    />
+                                                                </button>
                                                             )}
-                                                        </li>
-                                                    );
-                                                })}
+                                                        </div>
+                                                        {openDates[`${username}-${record.queryDate}-threads`] && (
+                                                            <div className="mt-4">{/* ...내용 표시... */}</div>
+                                                        )}
+                                                    </li>
+                                                ))}
                                             </ul>
                                         )}
                                     </div>
