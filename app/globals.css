@@ -1,52 +1,170 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* 모든 Pretendard 폰트 파일 정의 */
-@font-face {
-    font-family: 'Pretendard';
-    src: url('/fonts/Pretendard-Regular.woff') format('woff'), url('/fonts/Pretendard-Regular.otf') format('opentype');
-    font-weight: 400;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Pretendard';
-    src: url('/fonts/Pretendard-Bold.woff') format('woff'), url('/fonts/Pretendard-Bold.otf') format('opentype');
-    font-weight: 700;
-    font-style: normal;
-}
-
-/* 필요한 모든 font-weight와 style을 추가 정의 */
-@font-face {
-    font-family: 'Pretendard';
-    src: url('/fonts/Pretendard-Light.woff') format('woff'), url('/fonts/Pretendard-Light.otf') format('opentype');
-    font-weight: 300;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Pretendard';
-    src: url('/fonts/Pretendard-ExtraBold.woff') format('woff'),
-        url('/fonts/Pretendard-ExtraBold.otf') format('opentype');
-    font-weight: 800;
-    font-style: normal;
-}
+@import "tailwindcss";
 
 :root {
-    --background: #ffffff;
-    --foreground: #171717;
+  --bg: #f6f6f8;
+  --surface: #ffffff;
+  --surface-2: #f1f1f4;
+  --border: #e4e4ea;
+  --text: #17171c;
+  --muted: #6b6b78;
+  --faint: #9b9ba7;
+  --primary: #17171c;
+  --primary-text: #ffffff;
+  --danger: #d92d55;
+  --danger-soft: #fdecf0;
+  --good: #0f8a5f;
+  --good-soft: #e5f6ee;
+  --warn: #a86400;
+  --warn-soft: #fff4e0;
+  --series-1: #3a63d8;
+  --series-2: #d9641e;
+  --brand: linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%);
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
+  :root {
+    --bg: #0d0d10;
+    --surface: #17171c;
+    --surface-2: #202027;
+    --border: #2b2b33;
+    --text: #ededf1;
+    --muted: #a0a0ac;
+    --faint: #6e6e7a;
+    --primary: #ededf1;
+    --primary-text: #111114;
+    --danger: #ff6b8a;
+    --danger-soft: #3a1520;
+    --good: #43c995;
+    --good-soft: #0f2c22;
+    --warn: #f5b04a;
+    --warn-soft: #33250d;
+    --series-1: #7c9cff;
+    --series-2: #f08c4b;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-    color: var(--foreground);
-    background: var(--background);
-    font-family: 'Pretendard', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+@layer components {
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity 0.15s, background 0.15s;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-text);
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.btn-brand {
+  background: var(--brand);
+  color: #fff;
+}
+.btn-brand:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--border);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--text);
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+}
+
+.brand-text {
+  background: var(--brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

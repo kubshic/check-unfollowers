@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 맞팔체크 (check-unfollowers)
 
-## Getting Started
+인스타그램 "내 정보 내보내기" 파일로 나를 팔로우하지 않는 사람과 언팔로워 변화를 날짜별로 기록하는 서비스.
 
-First, run the development server:
+## 기능
+
+- 이메일 회원가입/로그인 (세션 쿠키 30일), 비밀번호 변경, 회원 탈퇴
+- 사용자별 인스타그램 계정 여러 개 등록 (최대 10개)
+- 인스타그램 ZIP을 그대로 올리거나 `followers_*.json` + `following.json`을 올려 체크
+- 체크 결과를 날짜별 스냅샷으로 저장하고 대시보드로 표시
+  - 팔로워 / 팔로잉 / 맞팔 안 함 / 새 언팔로워 수와 직전 체크 대비 증감
+  - **새 언팔로워**: 직전 체크 땐 맞팔이었는데 이번엔 나만 팔로우 중인 사람
+  - 맞팔 안 함 목록 (팔로우한 날짜, "언제부터 맞팔 아님", 검색·정렬·아이디 복사)
+  - 팔로워 변화(떠난/새 팔로워), 팔로잉 변화, 나만 팔로우 받는 사람
+  - 팔로워·팔로잉 추이 차트, 체크 기록 표
+- 예외 처리: 연예인·브랜드처럼 맞팔을 기대하지 않는 계정은 목록과 개수에서 제외
+
+## 정책
+
+| 항목 | 정책 |
+| --- | --- |
+| 파일 처리 | 파일은 브라우저에서만 해석하고 서버엔 아이디와 팔로우 시각만 전송·저장. 원본은 저장하지 않음 |
+| 파일 인식 | 파일 이름이 아니라 JSON 구조로 팔로워/팔로잉 구분. 팔로워 파일이 여러 개(`followers_2.json` …)여도 합침. HTML 형식은 안내 후 거부 |
+| 기준 날짜 | ZIP 이름의 날짜(`instagram-아이디-YYYY-MM-DD-…`) → 파일 수정일 → 오늘 순으로 자동 입력, 사용자가 수정 가능. 미래 날짜 불가 |
+| 같은 날짜 | 계정당 날짜별 1개. 같은 날짜로 올리면 확인 후 덮어씀 |
+| 변화 계산 | 저장하지 않고 항상 "바로 이전 날짜의 스냅샷"과 비교해 계산 → 과거 날짜 추가·삭제 시에도 기록이 일관됨 |
+| 경고 | ZIP의 계정명이 등록 계정과 다르면 경고. 팔로워 수가 직전 대비 40% 넘게 줄면 '전체 기간'으로 내보냈는지 확인 안내 |
+| 예외 계정 | 모든 날짜의 "맞팔 안 함" 개수에서 동일하게 제외해 비교가 맞도록 함 |
+| 오래된 기록 | 마지막 체크 후 30일이 지나면 업데이트 안내 |
+| 로그인 보호 | 같은 이메일로 10분 내 5회 실패 시 잠시 차단 |
+
+## 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 에서 확인. 기본 DB는 `data/app.db` (SQLite 파일, 자동 생성).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 배포
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+DB는 [libSQL](https://github.com/tursodatabase/libsql-client-ts)을 사용해 로컬에선 SQLite 파일, 배포 시엔 Turso를 쓸 수 있다.
+Vercel 같은 서버리스 환경에선 파일 DB가 유지되지 않으므로 Turso DB를 만들고 환경 변수를 설정한다.
 
-## Learn More
+```
+DATABASE_URL=libsql://<db-name>-<org>.turso.io
+DATABASE_AUTH_TOKEN=<token>
+```
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+테이블은 첫 요청 때 자동으로 만들어진다.
