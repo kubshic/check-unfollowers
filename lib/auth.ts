@@ -1,56 +1,81 @@
 import "server-only";
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import crypto from "node:crypto";
-import bcrypt from "bcryptjs";
-import { get, run } from "./db";
+import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
+import { dbClient, ensureDb } from "./db";
+import { LibsqlDialect } from "./kysely-libsql";
+import { mailEnabled, sendResetPasswordMail, sendVerificationMail } from "./mail";
 
-const COOKIE = "cu_session";
-const SESSION_DAYS = 30;
+const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 
-export type User = { id: number; email: string; created_at: number };
+export const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
-const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
+// 메일 서비스가 없는 배포 환경에선 인증 메일을 보낼 수 없으니 가입 시 인증을 요구하지 않는다.
+const requireVerification = mailEnabled || process.env.NODE_ENV !== "production";
 
-export const hashPassword = (pw: string) => bcrypt.hash(pw, 10);
-export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, hash);
+export const authOptions = {
+  baseURL: process.env.BETTER_AUTH_URL || (vercelUrl ? `https://${vercelUrl}` : undefined),
+  database: {
+    dialect: new LibsqlDialect(dbClient()),
+    type: "sqlite",
+    // 원격 Turso(HTTP)에선 요청마다 연결이 달라 BEGIN/COMMIT으로 묶을 수 없다.
+    transaction: false,
+  },
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    requireEmailVerification: requireVerification,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => sendResetPasswordMail(user.email, url),
+  },
+  emailVerification: {
+    sendOnSignUp: requireVerification,
+    sendOnSignIn: requireVerification,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => sendVerificationMail(user.email, url),
+  },
+  socialProviders: googleEnabled
+    ? {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          prompt: "select_account",
+        },
+      }
+    : {},
+  account: {
+    // 같은 이메일로 가입한 계정에 구글 로그인을 자동으로 연결한다 (구글은 이메일 소유를 확인해 준다).
+    accountLinking: { enabled: true, trustedProviders: ["google"] },
+  },
+  session: {
+    expiresIn: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24,
+  },
+  user: {
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        const { deleteUserData } = await import("./data");
+        await deleteUserData(user.id);
+      },
+    },
+  },
+  // 서버리스 환경에서도 인스턴스끼리 공유되도록 DB에 기록한다.
+  rateLimit: { storage: "database" },
+  plugins: [nextCookies()],
+} satisfies BetterAuthOptions;
 
-export async function createSession(userId: number) {
-  const token = crypto.randomBytes(32).toString("base64url");
-  const expires = Date.now() + SESSION_DAYS * 86400_000;
-  await run("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)", [
-    sha256(token),
-    userId,
-    expires,
-  ]);
-  (await cookies()).set(COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    expires: new Date(expires),
-  });
-}
+export const auth = betterAuth(authOptions);
 
-export async function destroySession() {
-  const jar = await cookies();
-  const token = jar.get(COOKIE)?.value;
-  if (token) await run("DELETE FROM sessions WHERE token_hash = ?", [sha256(token)]);
-  jar.delete(COOKIE);
-}
+export type User = { id: string; email: string; name: string };
 
 export const getUser = cache(async (): Promise<User | null> => {
-  const token = (await cookies()).get(COOKIE)?.value;
-  if (!token) return null;
-  const user = await get<User & { expires_at: number }>(
-    `SELECT u.id, u.email, u.created_at, s.expires_at
-       FROM sessions s JOIN users u ON u.id = s.user_id
-      WHERE s.token_hash = ?`,
-    [sha256(token)],
-  );
-  if (!user || user.expires_at < Date.now()) return null;
-  return { id: user.id, email: user.email, created_at: user.created_at };
+  await ensureDb();
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+  return { id: session.user.id, email: session.user.email, name: session.user.name };
 });
 
 export async function requireUser(): Promise<User> {

@@ -4,7 +4,7 @@
 
 ## 기능
 
-- 이메일 회원가입/로그인 (세션 쿠키 30일), 비밀번호 변경, 회원 탈퇴
+- 이메일 회원가입(이메일 인증)·로그인, Google 로그인, 비밀번호 찾기/재설정, 비밀번호 변경, 회원 탈퇴 — [Better Auth](https://better-auth.com)로 직접 운영
 - 사용자별 인스타그램 계정 여러 개 등록 (최대 10개)
 - 인스타그램 ZIP을 그대로 올리거나 `followers_*.json` + `following.json`을 올려 체크
 - 체크 결과를 날짜별 스냅샷으로 저장하고 대시보드로 표시
@@ -27,25 +27,31 @@
 | 경고 | ZIP의 계정명이 등록 계정과 다르면 경고. 팔로워 수가 직전 대비 40% 넘게 줄면 '전체 기간'으로 내보냈는지 확인 안내 |
 | 예외 계정 | 모든 날짜의 "맞팔 안 함" 개수에서 동일하게 제외해 비교가 맞도록 함 |
 | 오래된 기록 | 마지막 체크 후 30일이 지나면 업데이트 안내 |
-| 로그인 보호 | 같은 이메일로 10분 내 5회 실패 시 잠시 차단 |
+| 로그인 | 세션 30일. 가입 시 이메일 인증 필수(메일 서비스 미설정 시 생략). 같은 이메일의 Google 로그인은 자동 연결 |
+| 비밀번호 | 8자 이상. 재설정·변경 시 다른 기기 세션 모두 종료. 재설정 링크 1시간 유효·1회용 |
+| 요청 제한 | Better Auth 기본 제한을 DB에 기록해 서버리스 인스턴스 간 공유 |
+| 저장 용량 | 스냅샷 목록은 brotli로 압축해 저장 (실측 약 70KB → 24KB) |
+| 회원 탈퇴 | 로그인 정보와 등록 계정·체크 기록·예외 목록을 모두 즉시 삭제 |
 
 ## 실행
 
 ```bash
 npm install
+cp .env.example .env.local   # BETTER_AUTH_SECRET만 채우면 로컬에서 동작
 npm run dev
 ```
 
-http://localhost:3000 에서 확인. 기본 DB는 `data/app.db` (SQLite 파일, 자동 생성).
+http://localhost:3000 에서 확인. DB 주소를 비워두면 `data/app.db`(SQLite 파일)를 쓰고, 테이블은 첫 요청 때 자동으로 만들어진다.
+메일 서비스를 설정하지 않으면 인증·재설정 메일 대신 서버 로그에 링크가 찍힌다.
 
-## 배포
+## 배포 (Vercel)
 
-DB는 [libSQL](https://github.com/tursodatabase/libsql-client-ts)을 사용해 로컬에선 SQLite 파일, 배포 시엔 Turso를 쓸 수 있다.
-Vercel 같은 서버리스 환경에선 파일 DB가 유지되지 않으므로 Turso DB를 만들고 환경 변수를 설정한다.
+Vercel 프로젝트의 Environment Variables에 아래 값을 넣는다. 자세한 설명은 `.env.example` 참고.
 
-```
-DATABASE_URL=libsql://<db-name>-<org>.turso.io
-DATABASE_AUTH_TOKEN=<token>
-```
-
-테이블은 첫 요청 때 자동으로 만들어진다.
+| 변수 | 필수 | 설명 |
+| --- | --- | --- |
+| `DATABASE_URL`, `DATABASE_AUTH_TOKEN` | ✓ | Turso DB 주소와 토큰 (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` 이름도 인식) |
+| `BETTER_AUTH_SECRET` | ✓ | 32자 이상 임의 문자열 |
+| `BETTER_AUTH_URL` | | 사이트 주소. 비우면 Vercel 프로덕션 도메인 사용 |
+| `RESEND_API_KEY`, `EMAIL_FROM` | 권장 | 인증·비밀번호 재설정 메일. 없으면 이메일 인증을 건너뛰고 비밀번호 찾기가 동작하지 않음 |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | | 넣으면 Google 로그인 버튼이 나타남. 리디렉션 URI: `https://<도메인>/api/auth/callback/google` |
